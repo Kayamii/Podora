@@ -1,4 +1,5 @@
-FROM node:24-alpine AS build
+# The bundle is the same on every architecture, so build it natively once.
+FROM --platform=$BUILDPLATFORM node:24-alpine AS build
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
