@@ -1,0 +1,9 @@
+apiVersion: v2
+name: podora
+description: A lightweight, self-hosted Kubernetes management platform.
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+home: https://github.com/Kayamii/Podora
+sources:
+  - https://github.com/Kayamii/Podora

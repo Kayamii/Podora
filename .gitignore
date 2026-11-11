@@ -1,0 +1,22 @@
+# Go
+backend/bin/
+backend/data/
+*.exe
+*.test
+*.out
+
+# Node
+node_modules/
+frontend/dist/
+
+# Local data / env
+*.db
+.env
+.env.*
+!.env.example
+
+# Editors / OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db

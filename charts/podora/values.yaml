@@ -1,0 +1,67 @@
+backend:
+  image:
+    repository: ghcr.io/kayamii/podora-backend
+    tag: ""            # defaults to the chart appVersion
+    pullPolicy: IfNotPresent
+  resources: {}
+
+frontend:
+  image:
+    repository: ghcr.io/kayamii/podora-frontend
+    tag: ""            # defaults to the chart appVersion
+    pullPolicy: IfNotPresent
+  resources: {}
+
+imagePullSecrets: []
+
+serviceAccount:
+  create: true
+  name: ""
+  annotations: {}
+
+rbac:
+  # Creates a ClusterRole and binding for the Podora ServiceAccount.
+  # It is read-only for now; write permissions will be added together with
+  # the application-level authorization layer.
+  create: true
+  # Allow reading Secrets. Off by default.
+  readSecrets: false
+  # Allow the actions Podora offers: scale and restart workloads, delete pods.
+  # Off by default. Within Podora, only users whose role allows it can use them.
+  allowWrites: false
+  # Allow installing, upgrading and uninstalling Helm releases from the UI.
+  # A chart can create any kind of resource, so this binds Podora's service
+  # account to the cluster-admin role. Off by default. Within Podora, only
+  # Operators and Administrators with access to all namespaces can use Helm.
+  helm: false
+
+# Podora stores its accounts, sessions and audit log in a small SQLite
+# database. Without persistence they are lost whenever the pod restarts and
+# the first administrator has to be set up again.
+persistence:
+  enabled: true
+  size: 1Gi
+  # Empty uses the cluster's default storage class.
+  storageClass: ""
+  # Use an existing claim instead of creating one.
+  existingClaim: ""
+
+# Optional fixed token for creating the first administrator. When empty, a
+# random token is printed in the backend log on first start.
+setupToken: ""
+
+service:
+  type: ClusterIP
+  port: 80
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  host: podora.local
+  tls: []
+
+podAnnotations: {}
+nodeSelector: {}
+tolerations: []
+affinity: {}
