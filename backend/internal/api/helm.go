@@ -196,3 +196,4 @@ func chartDetail(rel *helm.ReleaseSummary) string {
 
 func isHelmInvalid(err error) bool  { return errors.Is(err, helm.ErrInvalid) }
 func isHelmNotFound(err error) bool { return errors.Is(err, helm.ErrNotFound) }
+func isHelmNoAccess(err error) bool { return errors.Is(err, helm.ErrNoAccess) }

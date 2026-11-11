@@ -27,6 +27,7 @@ import (
 	release "helm.sh/helm/v4/pkg/release/v1"
 	releaseutil "helm.sh/helm/v4/pkg/release/v1/util"
 	"helm.sh/helm/v4/pkg/storage/driver"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"sigs.k8s.io/yaml"
 )
@@ -37,6 +38,10 @@ var (
 	ErrInvalid = errors.New("invalid request")
 	// ErrNotFound means the release or uploaded chart does not exist.
 	ErrNotFound = errors.New("not found")
+	// ErrNoAccess means Podora's service account may not read or write Helm
+	// releases. Helm stores releases as Secrets, which the read-only default
+	// RBAC excludes.
+	ErrNoAccess = errors.New("Helm management is not enabled for this installation: Helm keeps releases in Secrets, which Podora's service account cannot read. Install Podora's chart with rbac.helm=true to manage Helm releases")
 )
 
 const (
@@ -332,7 +337,7 @@ func (m *Manager) Releases() ([]ReleaseSummary, error) {
 	list.All = true
 	found, err := list.Run()
 	if err != nil {
-		return nil, fmt.Errorf("listing releases: %w", err)
+		return nil, wrapHelmError("list", err)
 	}
 	out := make([]ReleaseSummary, 0, len(found))
 	for _, r := range found {
@@ -653,6 +658,9 @@ func resources(manifest, defaultNamespace string) []Resource {
 }
 
 func wrapHelmError(op string, err error) error {
+	if apierrors.IsForbidden(err) || strings.Contains(err.Error(), "is forbidden") {
+		return fmt.Errorf("%w (%s: %v)", ErrNoAccess, op, err)
+	}
 	if errors.Is(err, driver.ErrReleaseNotFound) {
 		return fmt.Errorf("%w: release not found", ErrNotFound)
 	}

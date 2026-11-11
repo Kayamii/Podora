@@ -111,3 +111,23 @@ response open and stream new lines), `timestamps=true`.
 Errors are JSON `{"error": "..."}`: `400` for a bad request, `404` when the
 resource does not exist, `403` when the cluster refuses Podora's service
 account, and `502` for any other failed Kubernetes call.
+
+## Trying a build on a test cluster
+
+Without a registry, build the images and load them straight into the
+cluster (shown for k3d; kind has `kind load docker-image`):
+
+```sh
+docker build -t podora-backend:dev backend
+docker build -t podora-frontend:dev frontend
+k3d image import -c <cluster> podora-backend:dev podora-frontend:dev
+
+helm upgrade --install podora charts/podora -n podora --create-namespace   --set backend.image.repository=podora-backend --set backend.image.tag=dev   --set frontend.image.repository=podora-frontend --set frontend.image.tag=dev   --set backend.image.pullPolicy=Never --set frontend.image.pullPolicy=Never
+
+kubectl -n podora logs deploy/podora -c backend     # setup token
+kubectl -n podora port-forward svc/podora 8090:80   # http://localhost:8090
+```
+
+After loading a rebuilt image under the same tag, delete the pod so it
+restarts on the new image. To start over with no accounts, scale the
+deployment to 0, delete the `podora-data` claim, and run the upgrade again.

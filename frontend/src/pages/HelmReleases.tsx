@@ -24,8 +24,10 @@ export function HelmReleases() {
       (namespace === '' || r.namespace === namespace) &&
       (needle === '' || r.name.toLowerCase().includes(needle) || r.chart.toLowerCase().includes(needle)),
   )
+  // Helm keeps releases in Secrets; a read-only Podora install cannot see them.
+  const disabled = error?.startsWith('Helm management is not enabled') ?? false
   const failing = shown.filter((r) => releaseLevel(r.status) === 'fault').length
-  const install = can('helm.manage') ? (
+  const install = can('helm.manage') && !disabled ? (
     <Button variant="primary" icon={<Plus size={16} />} onClick={() => navigate(href.helmInstall)}>
       Install chart
     </Button>
@@ -35,7 +37,13 @@ export function HelmReleases() {
     <div>
       <PageHeader
         title="Helm releases"
-        subtitle={loading ? 'Loading…' : `${plural(shown.length, 'release')}${failing > 0 ? ` · ${failing} failed` : ''}`}
+        subtitle={
+          disabled
+            ? 'Not enabled for this installation'
+            : loading
+              ? 'Loading…'
+              : `${plural(shown.length, 'release')}${failing > 0 ? ` · ${failing} failed` : ''}`
+        }
         actions={install}
       />
 
@@ -46,10 +54,15 @@ export function HelmReleases() {
         </div>
       )}
 
-      {error && <Notice level="warning">Could not refresh: {error}</Notice>}
+      {error && !disabled && <Notice level="warning">Could not refresh: {error}</Notice>}
 
       <Card padded={false}>
-        {loading ? (
+        {disabled ? (
+          <EmptyState icon={<Package size={22} />} title="Helm management is not enabled">
+            Helm keeps releases in Secrets, and this installation of Podora runs with read-only access that excludes Secrets. To
+            list and manage Helm releases, upgrade Podora's chart with <code className="font-mono text-sm">rbac.helm=true</code>.
+          </EmptyState>
+        ) : loading ? (
           <Skeleton />
         ) : all.length === 0 ? (
           <EmptyState icon={<Package size={22} />} title="No Helm releases yet" action={install}>

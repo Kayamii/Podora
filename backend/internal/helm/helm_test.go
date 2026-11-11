@@ -135,6 +135,9 @@ func TestWrapHelmError(t *testing.T) {
 	if !errors.Is(err, ErrInvalid) {
 		t.Errorf("name conflict: err = %v, want ErrInvalid", err)
 	}
+	if err := wrapHelmError("list", errors.New(`secrets is forbidden: User "system:serviceaccount:podora:podora" cannot list`)); !errors.Is(err, ErrNoAccess) {
+		t.Errorf("forbidden: err = %v, want ErrNoAccess", err)
+	}
 	if err := wrapHelmError("install", errors.New("connection refused")); errors.Is(err, ErrInvalid) {
 		t.Errorf("cluster failure classified as invalid: %v", err)
 	}

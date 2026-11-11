@@ -175,6 +175,8 @@ func writeClusterError(w http.ResponseWriter, r *http.Request, err error) {
 		status = http.StatusBadRequest
 	case isHelmNotFound(err):
 		status = http.StatusNotFound
+	case isHelmNoAccess(err):
+		status = http.StatusForbidden
 	case apierrors.IsNotFound(err):
 		status = http.StatusNotFound
 	case apierrors.IsBadRequest(err), apierrors.IsInvalid(err):
