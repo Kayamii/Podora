@@ -1,0 +1,19 @@
+{{- if and .Values.persistence.enabled (not .Values.persistence.existingClaim) }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "podora.fullname" . }}-data
+  labels:
+    {{- include "podora.labels" . | nindent 4 }}
+  annotations:
+    # Keep accounts and the audit log if Podora is uninstalled and reinstalled.
+    helm.sh/resource-policy: keep
+spec:
+  accessModes: ["ReadWriteOnce"]
+  {{- with .Values.persistence.storageClass }}
+  storageClassName: {{ . }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.persistence.size }}
+{{- end }}

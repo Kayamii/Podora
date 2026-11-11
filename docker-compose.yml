@@ -1,0 +1,17 @@
+# Local build of the full stack: http://localhost:3000
+services:
+  backend:
+    build: ./backend
+    environment:
+      PODORA_ADDR: ":8080"
+    ports:
+      - "8080:8080"
+
+  frontend:
+    build: ./frontend
+    environment:
+      PODORA_BACKEND_URL: http://backend:8080
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend

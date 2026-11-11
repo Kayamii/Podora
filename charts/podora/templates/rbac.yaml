@@ -1,0 +1,88 @@
+{{- if .Values.rbac.create }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "podora.fullname" . }}
+  labels:
+    {{- include "podora.labels" . | nindent 4 }}
+rules:
+  # Read-only access. Core resources are listed explicitly so that Secrets
+  # stay excluded unless rbac.readSecrets is enabled.
+  - apiGroups: [""]
+    resources:
+      - pods
+      - pods/log
+      - services
+      - endpoints
+      - configmaps
+      - events
+      - namespaces
+      - nodes
+      - persistentvolumes
+      - persistentvolumeclaims
+      - serviceaccounts
+      - replicationcontrollers
+      - resourcequotas
+      - limitranges
+      {{- if .Values.rbac.readSecrets }}
+      - secrets
+      {{- end }}
+    verbs: ["get", "list", "watch"]
+  - apiGroups:
+      - apps
+      - batch
+      - networking.k8s.io
+      - storage.k8s.io
+      - rbac.authorization.k8s.io
+      - apiextensions.k8s.io
+      - events.k8s.io
+      - discovery.k8s.io
+      - autoscaling
+      - policy
+      - metrics.k8s.io
+    resources: ["*"]
+    verbs: ["get", "list", "watch"]
+  {{- if .Values.rbac.allowWrites }}
+  # Exactly what the UI's actions need, nothing broader.
+  - apiGroups: ["apps"]
+    resources: ["deployments", "statefulsets", "daemonsets"]
+    verbs: ["patch"]
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["delete"]
+  {{- end }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "podora.fullname" . }}
+  labels:
+    {{- include "podora.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ include "podora.fullname" . }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "podora.serviceAccountName" . }}
+    namespace: {{ .Release.Namespace }}
+{{- if .Values.rbac.helm }}
+---
+# Helm charts can create any kind of resource, so Helm management needs
+# cluster-admin. Enabled only with rbac.helm=true.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "podora.fullname" . }}-helm
+  labels:
+    {{- include "podora.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "podora.serviceAccountName" . }}
+    namespace: {{ .Release.Namespace }}
+{{- end }}
+{{- end }}
